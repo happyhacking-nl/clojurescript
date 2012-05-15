@@ -1411,15 +1411,35 @@
                :ok)))
 
   ;; IComparable
-  (assert (= 0 (compare false false)))
+  (assert (=  0 (compare false false)))
   (assert (= -1 (compare false true)))
-  (assert (= 1 (compare true false)))
+  (assert (=  1 (compare true  false)))
+
+  (assert (= -1 (compare  0  1)))
+  (assert (= -1 (compare -1  1)))
+  (assert (=  0 (compare  1  1)))
+  (assert (=  1 (compare  1  0)))
+  (assert (=  1 (compare  1 -1)))
+
+  (assert (=  0 (compare "cljs" "cljs")))
+  (assert (=  0 (compare :cljs :cljs)))
+  (assert (=  0 (compare 'cljs 'cljs)))
+  (assert (= -1 (compare "a" "b")))
+  (assert (= -1 (compare :a :b)))
+  (assert (= -1 (compare 'a 'b)))
+
+  ;; This is different from clj. clj gives -2 next 3 tests
+  (assert (= -1 (compare "a" "c")))
+  (assert (= -1 (compare :a :c)))
+  (assert (= -1 (compare 'a 'c)))
 
   (assert (= -1 (compare [1 2] [1 1 1])))
   (assert (= -1 (compare [1 2] [1 2 1])))
-  (assert (= 0 (compare [1 2] [1 2])))
-  (assert (= 1 (compare [1 1 1] [1 2])))
-  (assert (= -1 (compare [1 1 1] [1 1 2])))
+  (assert (= -1 (compare [1 1] [1 2])))
+  (assert (=  0 (compare [1 2] [1 2])))
+  (assert (=  1 (compare [1 2] [1 1])))
+  (assert (=  1 (compare [1 1 1] [1 2])))
+  (assert (=  1 (compare [1 1 2] [1 1 1])))
 
   :ok
   )

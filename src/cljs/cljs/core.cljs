@@ -261,7 +261,7 @@
   (-disjoin! [tcoll v]))
 
 (defprotocol IComparable
-  (-compareTo [x y]))
+  (-compare [x y]))
 
 ;;;;;;;;;;;;;;;;;;; fundamentals ;;;;;;;;;;;;;;;
 (defn ^boolean identical?
@@ -920,25 +920,38 @@ reduces them without incurring seq initialization"
  of the same type and special-cases nil to be less than any other object."
   [x y]
   (cond
-   (and (identical? (type x) (type y))
-        (satisfies? IComparable x)) (-compareTo x y)
-    (identical? (type x) (type y)) (garray/defaultCompare x y)
-    (nil? x) -1
-    (nil? y) 1
-    :else (throw (js/Error. "compare on non-nil objects of different types"))))
+   (identical? x y) 0
+   (nil? x) -1
+   (nil? y) 1
+   (identical? (type x) (type y)) (if (satisfies? IComparable x)
+                                    (-compare x y)
+                                    (garray/defaultCompare x y))
+   :else (throw (js/Error. "compare on non-nil objects of different types"))))
+
+(defn ^:private compare-strings
+  "Compare strings (including symbols and keywords)."
+  [x y]
+  (if (or (symbol? x) (keyword? x))
+    (compare-strings (name x) (name y))
+    (cond
+     (= x y)  0
+     (< x y) -1
+     :else    1)))
 
 (defn ^:private compare-indexed
   "Compare indexed collection."
-  [x y]
-  (let [xl (count x)
-        yl (count y)]
-    (cond
-     (< xl yl) -1
-     (> xl yl) 1
-     :else (or (->> (for [i (range xl)] (compare (nth x i) (nth y i)))
-                   (filter (fn [z] (not (zero? z))))
-                   first)
-               0))))
+  ([xs ys]
+     (let [xl (count xs)
+           yl (count ys)]
+       (cond
+        (< xl yl) -1
+        (> xl yl) 1
+        :else (compare-indexed xs ys xl 0))))
+  ([xs ys len n]
+     (let [d (compare (nth xs n) (nth ys n))]
+       (if (and (zero? d) (< (+ n 1) len))
+         (recur xs ys len (inc n))
+         d))))
 
 (defn ^:private fn->comparator
   "Given a fn that might be boolean valued or a comparator,
@@ -5882,32 +5895,29 @@ reduces them without incurring seq initialization"
   Range
   (-pr-seq [coll opts] (pr-sequential pr-seq "(" " " ")" opts coll)))
 
-;; IComparable
 
+;; IComparable
 (extend-protocol IComparable
   boolean
-  (-compareTo [x y] (cond
-                     (= x y) 0
-                     y -1
-                     :else 1))
+  (-compare [x y] (cond
+                   (= x y) 0
+                   y -1
+                   :else 1))
 
   number
-  (-compareTo [x y] (cond
-                     (= x y) 0
-                     (< x y) -1
-                     :else 1))
+  (-compare [x y] (cond
+                   (= x y) 0
+                   (< x y) -1
+                   :else 1))
 
   string
-  (-compareTo [x y] (cond
-                     (= x y) 0
-                     (< x y) -1
-                     :else 1))
+  (-compare [x y] (compare-strings x y))
 
   array
-  (-compareTo [x y] (compare-indexed x y))
+  (-compare [x y] (compare-indexed x y))
 
   PersistentVector
-  (-compareTo [x y] (compare-indexed x y))
+  (-compare [x y] (compare-indexed x y))
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reference Types ;;;;;;;;;;;;;;;;
