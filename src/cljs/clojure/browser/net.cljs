@@ -15,7 +15,7 @@ Includes a common API over XhrIo, CrossPageChannel, and Websockets."
             [goog.net.EventType :as gnet-event-type]
             [goog.net.xpc.CfgFields :as gxpc-config-fields]
             [goog.net.xpc.CrossPageChannel :as xpc]
-            #_[goog.net.WebSocket :as gwebsocket]
+            [goog.net.WebSocket :as gwebsocket]
             [goog.json :as gjson]))
 
 (def *timeout* 10000)
@@ -142,10 +142,10 @@ Includes a common API over XhrIo, CrossPageChannel, and Websockets."
 ;; WebSocket is not supported in the 3/23/11 release of Google
 ;; Closure, but will be included in the next release.
 
-#_(defprotocol IWebSocket
-    (open? [this]))
+(defprotocol IWebSocket
+  (open? [this]))
 
-#_(extend-type goog.net.WebSocket
+(extend-type goog.net.WebSocket
 
   IWebSocket
   (open? [this]
