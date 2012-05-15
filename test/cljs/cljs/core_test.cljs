@@ -1410,5 +1410,16 @@
                  :fail)
                :ok)))
 
+  ;; IComparable
+  (assert (= 0 (compare false false)))
+  (assert (= -1 (compare false true)))
+  (assert (= 1 (compare true false)))
+
+  (assert (= -1 (compare [1 2] [1 1 1])))
+  (assert (= -1 (compare [1 2] [1 2 1])))
+  (assert (= 0 (compare [1 2] [1 2])))
+  (assert (= 1 (compare [1 1 1] [1 2])))
+  (assert (= -1 (compare [1 1 1] [1 1 2])))
+
   :ok
   )

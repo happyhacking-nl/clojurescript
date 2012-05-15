@@ -260,6 +260,9 @@
 (defprotocol ITransientSet
   (-disjoin! [tcoll v]))
 
+(defprotocol IComparable
+  (-compareTo [x y]))
+
 ;;;;;;;;;;;;;;;;;;; fundamentals ;;;;;;;;;;;;;;;
 (defn ^boolean identical?
   "Tests if 2 arguments are the same object"
@@ -913,14 +916,29 @@ reduces them without incurring seq initialization"
 (defn compare
   "Comparator. Returns a negative number, zero, or a positive number
   when x is logically 'less than', 'equal to', or 'greater than'
-  y. Uses google.array.defaultCompare for objects of the same type
-  and special-cases nil to be less than any other object."
+  y. Uses IComparable if available and google.array.defaultCompare for objects
+ of the same type and special-cases nil to be less than any other object."
   [x y]
   (cond
+   (and (identical? (type x) (type y))
+        (satisfies? IComparable x)) (-compareTo x y)
     (identical? (type x) (type y)) (garray/defaultCompare x y)
     (nil? x) -1
     (nil? y) 1
     :else (throw (js/Error. "compare on non-nil objects of different types"))))
+
+(defn ^:private compare-indexed
+  "Compare indexed collection."
+  [x y]
+  (let [xl (count x)
+        yl (count y)]
+    (cond
+     (< xl yl) -1
+     (> xl yl) 1
+     :else (or (->> (for [i (range xl)] (compare (nth x i) (nth y i)))
+                   (filter (fn [z] (not (zero? z))))
+                   first)
+               0))))
 
 (defn ^:private fn->comparator
   "Given a fn that might be boolean valued or a comparator,
@@ -5863,6 +5881,34 @@ reduces them without incurring seq initialization"
 
   Range
   (-pr-seq [coll opts] (pr-sequential pr-seq "(" " " ")" opts coll)))
+
+;; IComparable
+
+(extend-protocol IComparable
+  boolean
+  (-compareTo [x y] (cond
+                     (= x y) 0
+                     y -1
+                     :else 1))
+
+  number
+  (-compareTo [x y] (cond
+                     (= x y) 0
+                     (< x y) -1
+                     :else 1))
+
+  string
+  (-compareTo [x y] (cond
+                     (= x y) 0
+                     (< x y) -1
+                     :else 1))
+
+  array
+  (-compareTo [x y] (compare-indexed x y))
+
+  PersistentVector
+  (-compareTo [x y] (compare-indexed x y))
+  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reference Types ;;;;;;;;;;;;;;;;
 
