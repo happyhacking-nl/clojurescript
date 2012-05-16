@@ -1427,6 +1427,13 @@
   (assert (= -1 (compare "a" "b")))
   (assert (= -1 (compare :a :b)))
   (assert (= -1 (compare 'a 'b)))
+  ;; cases involving ns
+  (assert (= -1 (compare :b/a :c/a)))
+  (assert (= -1 (compare :c :a/b)))
+  (assert (=  1 (compare :a/b :c)))
+  (assert (= -1 (compare 'b/a 'c/a)))
+  (assert (= -1 (compare 'c 'a/b)))
+  (assert (=  1 (compare 'a/b 'c)))
 
   ;; This is different from clj. clj gives -2 next 3 tests
   (assert (= -1 (compare "a" "c")))
@@ -1440,6 +1447,10 @@
   (assert (=  1 (compare [1 2] [1 1])))
   (assert (=  1 (compare [1 1 1] [1 2])))
   (assert (=  1 (compare [1 1 2] [1 1 1])))
+
+  (assert (= -1 (compare (subvec [1 2 3] 1) (subvec [1 2 4] 1))))
+  (assert (=  0 (compare (subvec [1 2 3] 1) (subvec [1 2 3] 1))))
+  (assert (=  1 (compare (subvec [1 2 4] 1) (subvec [1 2 3] 1))))
 
   :ok
   )

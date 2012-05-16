@@ -928,15 +928,28 @@ reduces them without incurring seq initialization"
                                     (garray/defaultCompare x y))
    :else (throw (js/Error. "compare on non-nil objects of different types"))))
 
+(defn ^:private compare-strings-with-ns
+  "Namespace aware string comparison."
+  [x y]
+  (let [nsx (namespace x)
+        nsy (namespace y)]
+    (cond
+     (and (nil? nsx) (nil? nsy)) (compare-strings (name x) (name y))
+     (and (nil? nsx) (not (nil? nsy))) -1
+     (and (not (nil? nsx)) (nil? nsy))  1
+     :else (let [nsc (compare-strings nsx nsy)]
+             (if (zero? nsc)
+               (compare-strings (name x) (name y))
+               nsc)))))
+
 (defn ^:private compare-strings
   "Compare strings (including symbols and keywords)."
   [x y]
-  (if (or (symbol? x) (keyword? x))
-    (compare-strings (name x) (name y))
-    (cond
-     (= x y)  0
-     (< x y) -1
-     :else    1)))
+  (cond
+   (= x y)  0
+   (or (keyword? x) (symbol? x)) (compare-strings-with-ns x y)
+   (< x y) -1
+   :else    1))
 
 (defn ^:private compare-indexed
   "Compare indexed collection."
